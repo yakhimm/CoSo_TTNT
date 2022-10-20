@@ -1,7 +1,8 @@
 from collections import deque
-from main import MAZE
+from maze import MAZE
 import math
-from node import*
+from node import PriorityQueue
+
 # class duyệt maza
 class Algorithm:
     # Các tham số truyền vào là maze, start, goal
@@ -28,6 +29,7 @@ class Algorithm:
             elif move == 'D':
                 i += 1
             pos.append((i, j))
+        # Sau này sẽ in ra file txt
         # for i, row in enumerate(self.maze):
         #     for j, col in enumerate(row):
         #         if (i, j) in pos:
@@ -49,7 +51,7 @@ class Algorithm:
 
         while stack:
             # Xét vị trí tiếp theo
-            curr=stack.pop()
+            curr = stack.pop()
             # Khi đi qua thì duyệt True (đóng lại)
             visted[curr[0]][curr[1]] = True
             # Nếu gặp đích đến thì dừng
@@ -80,20 +82,19 @@ class Algorithm:
                 # Thêm đường đi vào tập mở, và chờ duyệt
                 stack.append((nr, nc, curr[2] + go))  
 
-
     def bfs(self):
         # Tập mở chứa các vị trí và đường đi (dùng queue)
-        open = deque()
-        open.appendleft((self.start[0], self.start[1], 'S'))
+        queue = deque()
+        queue.appendleft((self.start[0], self.start[1], 'S'))
 
         # way chỉ các bước Right - Lelf - Down - Up
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Các vị trí mà đã duyệt qua (lưu vết)
         visted = [[False] * self.col for _ in range(self.row)]
 
-        while len(open) != 0:
+        while len(queue) != 0:
             # Đưa vào tập đóng
-            close = open.pop()
+            close = queue.pop()
             # Khi đi qua thì duyệt True (đóng lại)
             visted[close[0]][close[1]] = True
             # Nếu gặp đích đến thì dừng
@@ -123,26 +124,71 @@ class Algorithm:
                 elif way == [-1, 0]:
                     go = 'U'
                 # Thêm đường đi vào tập mở, và chờ duyệt
-                open.appendleft((nr, nc, close[2] + go))  
+                queue.appendleft((nr, nc, close[2] + go))  
 
     # Heuristic tính khoản cách giữa vị trí pos đến đích
-    def h_core(self, pos):
+    def heuristic(self, pos):
         return math.sqrt(pow(pos[0] - self.goal[0], 2) + pow(pos[1] - self.goal[1], 2))
-        #return abs(pos[0] - self.goal[0]) + abs(pos[1] - self.goal[1])
+        # return abs(pos[0] - self.goal[0]) + abs(pos[1] - self.goal[1])
     def gbf(self):
         # Tập mở open dựa vào hàng đợi ưu tiên
-        # Chứa vị trí i, j và g(n) và đường đi 
+        # Chứa vị trí i, j và đường đi 
         open = PriorityQueue()
-        #h(n) từ start->goal
-        curr_f = self.h_core([start[0], start[1]])
         # Tạo vị trí bắt đầu
-        open.put(curr_f,(start[0], start[1], 0, 'S'))
+        # h(n) từ start->goal
+        curr_f = self.heuristic(self.start)
+        open.put(curr_f, (start[0], start[1], 'S'))
+
         # way chỉ các bước Right - Lelf - Down - Up
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Biến lưu vết các vị trí đã đi (close)
         visted = [[False] * self.col for _ in range(self.row)]
-        while open.isEmpty!=False:
+        while open.isEmpty() == False:
             # Lấy từ tập open -> tập close với node có chi phí tới goal bé nhất
+            close = open.get()
+            # close (lưu vết lại)
+            visted[close[1][0]][close[1][1]] = True
+            # Tương tự như bfs
+            if self.maze[close[1][0]][close[1][1]] == 'G':
+                pos = self.move2pos(close[1][2])
+                return pos
+
+            for way in ways:
+                # Tương tự: nr và nc là vị trí neightbor 
+                nr, nc = close[1][0] + way[0], close[1][1] + way[1]
+                # Nếu vượt phạm vi hoặc chạm 'x' hoặc đã đóng thì -> continue
+                if (nr < 0 or nr >= self.row 
+                    or nc < 0 or nc >= self.col 
+                    or self.maze[nr][nc] == 'x' 
+                    or visted[nr][nc]): continue
+                
+                # Tính f_core ~ f(n')
+                f_core = self.heuristic([nr, nc])
+                if way == [0, 1]:
+                    go = 'R'
+                elif way == [0, -1]: 
+                    go = 'L'
+                elif way == [1, 0]:
+                    go = 'D'
+                elif way == [-1, 0]:
+                    go = 'U'
+                # Đưa vào tập mở và chờ duyệt, với độ ưu tiên sẽ là f_core
+                open.put(f_core, (nr, nc, close[1][2] + go))
+
+    def A_star(self):
+        # Tập mở open
+        # Chứa vị trí i, j và g(n) và đường đi 
+        open = PriorityQueue()
+        # Tạo vị trí bắt đầu 
+        curr_f = self.heuristic(self.start)
+        open.put(curr_f, (start[0], start[1], 0, 'S'))
+
+        # way chỉ các bước Right - Lelf - Down - Up
+        ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+        # Biến lưu vết các vị trí đã đi (close)
+        visted = [[False] * self.col for _ in range(self.row)]
+        while open.isEmpty() == False:
+            # Lấy từ tập open -> tập close
             close = open.get()
             # close (lưu vết lại)
             visted[close[1][0]][close[1][1]] = True
@@ -161,80 +207,35 @@ class Algorithm:
                     or visted[nr][nc]): continue
                 
                 # Tính f_core ~ f(n'), vì các bước đi tương tự nhau nên sẽ lấy close[2] ~ bước đi của cha + 1 -> g(n')
-                f_core = self.h_core([nr, nc])
-                # Nếu curr_f <= f_core thì sẽ duyệt (định hướng)
+                h_core = self.heuristic([nr, nc])
+                # f(n') = h(n') + g(n') 
+                f_core = h_core + close[1][2] + 1
+
                 if way == [0, 1]:
-                        go = 'R'
+                    go = 'R'
                 elif way == [0, -1]: 
-                        go = 'L'
+                    go = 'L'
                 elif way == [1, 0]:
-                        go = 'D'
+                    go = 'D'
                 elif way == [-1, 0]:
-                        go = 'U'
-                    # Đưa vào tập mở và chờ duyệt
-                open.put(f_core,(nr, nc, close[1][2] + 1, close[1][3] + go))
-
-
-
-
-    def A_star(self):
-        # Tập mở open
-        # Chứa vị trí i, j và g(n) và đường đi 
-        open = deque()
-        # Tạo vị trí bắt đầu
-        open.appendleft((start[0], start[1], 0, 'S'))
-
-        # way chỉ các bước Right - Lelf - Down - Up
-        ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
-        # Biến lưu vết các vị trí đã đi (close)
-        visted = [[False] * self.col for _ in range(self.row)]
-        while len(open) != 0:
-            # Lấy từ tập open -> tập close
-            close = open.pop()
-            # close (lưu vết lại)
-            visted[close[0]][close[1]] = True
-            # Tương tự như bfs
-            if self.maze[close[0]][close[1]] == 'G':
-                pos = self.move2pos(close[3])
-                return pos
-
-            # current_f(n) sẽ là hàm f(n)
-            curr_f = self.h_core([close[0], close[1]]) + close[2]
-            for way in ways:
-                # Tương tự: nr và nc là vị trí neightbor 
-                nr, nc = close[0] + way[0], close[1] + way[1]
-                # Nếu vượt phạm vi hoặc chạm 'x' hoặc đã đóng thì -> continue
-                if (nr < 0 or nr >= self.row 
-                    or nc < 0 or nc >= self.col 
-                    or self.maze[nr][nc] == 'x' 
-                    or visted[nr][nc]): continue
-                
-                # Tính f_core ~ f(n'), vì các bước đi tương tự nhau nên sẽ lấy close[2] ~ bước đi của cha + 1 -> g(n')
-                f_core = self.h_core([nr, nc]) + close[2] + 1
-                # Nếu curr_f <= f_core thì sẽ duyệt (định hướng)
-                if curr_f <= f_core:
-                    if way == [0, 1]:
-                        go = 'R'
-                    elif way == [0, -1]: 
-                        go = 'L'
-                    elif way == [1, 0]:
-                        go = 'D'
-                    elif way == [-1, 0]:
-                        go = 'U'
-                    # Đưa vào tập mở và chờ duyệt
-                    open.appendleft((nr, nc, close[2] + 1, close[3] + go))
+                    go = 'U'
+                # Đưa vào tập mở và chờ duyệt, với độ ưu tiên là f_core
+                open.put(f_core, (nr, nc, close[1][2] + 1, close[1][3] + go))
 
 # TEST
-file = 'maps/bfs_map.txt'
-maps = MAZE(file)
+fileIn = 'maps/bfs_map.txt'
+fileOut = 'maps/bfs_map.txt'
+maps = MAZE(fileIn, fileOut)
 maze = maps.read_maze()
 start = maps.start
 goal = maps.goal
 
 algo = Algorithm(maze, start, goal)
 aStar = algo.A_star()
-gbf=algo.gbf()
-print(aStar)
+gbf = algo.gbf()
 bfs = algo.bfs()
-dfs=algo.dfs()
+dfs = algo.dfs()
+print(bfs)
+print(dfs)
+print(aStar)
 print(gbf)

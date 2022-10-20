@@ -19,13 +19,14 @@ class MAZE:
     start = []
     goal = []
 
-    def __init__(self, file):
+    def __init__(self, fileIn, fileOut):
     # File maps 'maps/bfs_map.txt'
-        self.file = file
+        self.fileIn = fileIn
+        self.fileOut = fileOut
 
     # Hàm mở file để vẽ maza
     def draw_maze(self):
-        with open(self.file, 'w') as outfile:
+        with open(self.fileOut, 'w') as outfile:
             outfile.write('0\n')
             outfile.write('xxxxxxxxxxxxxxxxxxxxxx\n')
             outfile.write('x   x   xx xx        x\n')
@@ -41,7 +42,7 @@ class MAZE:
 
     # Hàm đọc vị trí của điểm thưởng (reward Point) và tìm kiếm đích (Goal) trong maze (Matrix)
     def read_maze(self):
-        with open(self.file, 'r') as f:
+        with open(self.fileIn, 'r') as f:
             # Maze có ký tự, chưa mã hóa về matrix
             self.M_raw = f.read().split('\n') 
 

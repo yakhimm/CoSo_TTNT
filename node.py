@@ -1,8 +1,4 @@
 from collections import defaultdict
-class Node:
-    def __init__(self, priority, value):
-        self.priority = priority
-        self.value = value
 
 class PriorityQueue(object):
     def __init__(self):
@@ -16,12 +12,13 @@ class PriorityQueue(object):
         return len(self.queue) == 0
  
     # for inserting an element in the queue
-    def put(self, key,value):
-        self.queue[key]=value
- 
+    def put(self, key, value):
+        self.queue[key] = value
+    
     # for popping an element based on Priority
     def get(self):
-        a=min(self.queue.keys())
-        item={}
-        item=[a,self.queue[a]]
+        key = min(self.queue.keys())
+        item = {}
+        item = [key, self.queue[key]]
+        self.queue.pop(key)
         return item
