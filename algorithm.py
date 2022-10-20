@@ -168,7 +168,7 @@ class Algorithm:
                 elif way == [-1, 0]:
                     go = 'U'
                 sub_cost += 1
-                cost = float(close[1][2] + 1 + float(sub_cost / 1000))
+                cost = float(close[1][2] + 1 + float(sub_cost / 10000))
                 # Đưa vào tập mở và chờ duyệt, với độ ưu tiên sẽ là f_core
                 open.put(cost, (nr, nc, cost, close[1][3] + go))
 
@@ -176,7 +176,7 @@ class Algorithm:
     def heuristic(self, pos):
         return math.sqrt(pow(pos[0] - self.goal[0], 2) + pow(pos[1] - self.goal[1], 2))
         # return abs(pos[0] - self.goal[0]) + abs(pos[1] - self.goal[1])
-    def gbf(self):
+    def gbfs(self):
         # Tập mở open dựa vào hàng đợi ưu tiên
         # Chứa vị trí i, j và đường đi 
         open = PriorityQueue()
@@ -269,21 +269,22 @@ class Algorithm:
                 open.put(f_core, (nr, nc, close[1][2] + 1, close[1][3] + go))
 
 # TEST
-fileIn = 'maps/bfs_map.txt'
+fileIn = 'cuaHau/maze.txt'
 fileOut = 'maps/bfs_map.txt'
 maps = MAZE(fileIn, fileOut)
-maze = maps.read_maze()
+maze = maps.converse_maze()
 start = maps.start
 goal = maps.goal
 print(start[0], start[1])
-# algo = Algorithm(maze, start, goal)
-# aStar = algo.A_star()
-# gbf = algo.gbf()
-# bfs = algo.bfs()
-# dfs = algo.dfs()
-# ucs = algo.ucs()
-# print(bfs)
-# print(dfs)
-# print(aStar)
-# print(gbf)
-# print(ucs)
+algo = Algorithm(maze, start, goal)
+aStar = algo.A_star()
+gbfs = algo.gbfs()
+bfs = algo.bfs()
+dfs = algo.dfs()
+ucs = algo.ucs()
+print('BFS: ', bfs)
+print('DFS: ',dfs)
+print('UCS: ',ucs)
+print('A*: ',aStar)
+print('GBFS: ',gbfs)
+

@@ -70,9 +70,3 @@ class MAZE:
             self.maze.append(maze[i])
 
         return self.maze
-
-fileIn = 'maps/bfs_map.txt'
-fileOut = 'maps/bfs_map.txt'
-maps = MAZE(fileIn, fileOut)
-maze = maps.converse_maze()
-print(maze)
