@@ -16,7 +16,7 @@ class PriorityQueue(object):
         self.queue[key] = value
     
     # for popping an element based on Priority
-    def get(self):
+    def pop(self):
         key = min(self.queue.keys())
         item = {}
         item = [key, self.queue[key]]

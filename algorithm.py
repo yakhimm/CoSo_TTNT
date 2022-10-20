@@ -1,7 +1,7 @@
 from collections import deque
 from maze import MAZE
 import math
-from node import PriorityQueue
+from priQueue import PriorityQueue
 
 # class duyệt maza
 class Algorithm:
@@ -145,7 +145,7 @@ class Algorithm:
         visted = [[False] * self.col for _ in range(self.row)]
         while open.isEmpty() == False:
             # Lấy từ tập open -> tập close với node có chi phí tới goal bé nhất
-            close = open.get()
+            close = open.pop()
             # close (lưu vết lại)
             visted[close[1][0]][close[1][1]] = True
             # Tương tự như bfs
@@ -189,7 +189,7 @@ class Algorithm:
         visted = [[False] * self.col for _ in range(self.row)]
         while open.isEmpty() == False:
             # Lấy từ tập open -> tập close
-            close = open.get()
+            close = open.pop()
             # close (lưu vết lại)
             visted[close[1][0]][close[1][1]] = True
             # Tương tự như bfs
