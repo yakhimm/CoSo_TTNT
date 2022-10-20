@@ -22,3 +22,9 @@ class PriorityQueue(object):
         item = [key, self.queue[key]]
         self.queue.pop(key)
         return item
+
+    def keys(self):
+        print(self.queue.keys())
+    
+    def printQueue(self):
+        print(self.queue)

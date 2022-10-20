@@ -7,8 +7,7 @@
 file_name = 'maze.txt'
 
 '''------------------------------'''
-class Maze:
-
+class MAZE:
     #variables
     bonus = []           
     walls = []
@@ -24,7 +23,7 @@ class Maze:
         self.set_value()
 
     def read_file(self,file_name: str = 'maze.txt'):
-        f=open(file_name,'r')
+        f = open(file_name,'r')
         n_bonus_points = int(next(f)[:-1])
         #
         bonus_points = []
@@ -33,9 +32,9 @@ class Maze:
             x, y, reward = map(int, next(f)[:-1].split(' '))
             bonus_points.append((x, y, reward))
 
-        text=f.read()
-        print(text)
-        matrix=[list(i) for i in text.splitlines()]
+        text = f.read()
+
+        matrix = [list(i) for i in text.splitlines()]
 
         f.close()
         

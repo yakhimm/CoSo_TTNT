@@ -155,8 +155,8 @@ maze = Maze()
 rows = maze.number_rows
 cols = maze.number_cols
 s: cell_positon=cell_positon(maze.start[0], maze.start[1])
-e:cell_positon=cell_positon(maze.goal[0], maze.goal[1])
+e: cell_positon=cell_positon(maze.goal[0], maze.goal[1])
 
-g: grid=grid(maze,rows,cols,s,e)
+g: grid = grid(maze, rows, cols, s, e)
 ucs()
        

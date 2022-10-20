@@ -126,6 +126,52 @@ class Algorithm:
                 # Thêm đường đi vào tập mở, và chờ duyệt
                 queue.appendleft((nr, nc, close[2] + go))  
 
+    def ucs(self):
+        # Tập mở open dựa vào hàng đợi ưu tiên
+        # Chứa vị trí i, j và đường đi 
+        open = PriorityQueue()
+        # Tạo vị trí bắt đầu
+        # h(n) từ start->goal
+        open.put(0, (start[0], start[1], 0, 'S'))
+
+        # way chỉ các bước Right - Lelf - Down - Up
+        ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+        # Biến lưu vết các vị trí đã đi (close)
+        visted = [[False] * self.col for _ in range(self.row)]
+        while open.isEmpty() == False:
+            # Lấy từ tập open -> tập close với node có chi phí tới goal bé nhất
+            close = open.pop()
+            # close (lưu vết lại)
+            visted[close[1][0]][close[1][1]] = True
+            # Tương tự như bfs
+            if self.maze[close[1][0]][close[1][1]] == 'G':
+                pos = self.move2pos(close[1][3])
+                return pos
+
+            sub_cost = 0
+            for way in ways:
+                # Tương tự: nr và nc là vị trí neightbor 
+                nr, nc = close[1][0] + way[0], close[1][1] + way[1]
+                # Nếu vượt phạm vi hoặc chạm 'x' hoặc đã đóng thì -> continue
+                if (nr < 0 or nr >= self.row 
+                    or nc < 0 or nc >= self.col 
+                    or self.maze[nr][nc] == 'x' 
+                    or visted[nr][nc]): continue
+                
+                # Tính f_core ~ f(n')
+                if way == [0, 1]:
+                    go = 'R'
+                elif way == [0, -1]: 
+                    go = 'L'
+                elif way == [1, 0]:
+                    go = 'D'
+                elif way == [-1, 0]:
+                    go = 'U'
+                sub_cost += 1
+                cost = float(close[1][2] + 1 + float(sub_cost / 1000))
+                # Đưa vào tập mở và chờ duyệt, với độ ưu tiên sẽ là f_core
+                open.put(cost, (nr, nc, cost, close[1][3] + go))
+
     # Heuristic tính khoản cách giữa vị trí pos đến đích
     def heuristic(self, pos):
         return math.sqrt(pow(pos[0] - self.goal[0], 2) + pow(pos[1] - self.goal[1], 2))
@@ -229,13 +275,15 @@ maps = MAZE(fileIn, fileOut)
 maze = maps.read_maze()
 start = maps.start
 goal = maps.goal
-
-algo = Algorithm(maze, start, goal)
-aStar = algo.A_star()
-gbf = algo.gbf()
-bfs = algo.bfs()
-dfs = algo.dfs()
-print(bfs)
-print(dfs)
-print(aStar)
-print(gbf)
+print(start[0], start[1])
+# algo = Algorithm(maze, start, goal)
+# aStar = algo.A_star()
+# gbf = algo.gbf()
+# bfs = algo.bfs()
+# dfs = algo.dfs()
+# ucs = algo.ucs()
+# print(bfs)
+# print(dfs)
+# print(aStar)
+# print(gbf)
+# print(ucs)
