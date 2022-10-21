@@ -1,24 +1,37 @@
+import pygame
 from collections import deque
+from collections import Counter
 from maze import MAZE
 import math
 from priQueue import PriorityQueue
 
+FPS = 10
+fpsClock = pygame.time.Clock()
+
 # class duyệt maza
 class Algorithm:
     # Các tham số truyền vào là maze, start, goal
-    def __init__(self, maze, start, goal):
+    def __init__(self, maze, start, goal, screen, path):
         self.maze = maze
         self.start = start
         self.goal = goal
         # Tính dòng và cột 
         self.row = len(maze)
         self.col = len(maze[0])
+        # Draw
+        self.screen = screen
+        self.path_img = path
+        self.flag_img = pygame.image.load(path + 'flag.png')
+
+        self.size = (35, 35)
+        self.flag_img = pygame.transform.scale(self.flag_img, self.size)
 
     # Chuyển đường đi từ str() thành [] chứa các vị trí pos
     def move2pos(self, path = ''):
         i = self.start[0]
         j = self.start[1]
         pos = []
+        
         for move in path:
             if move == 'L':
                 j -= 1
@@ -29,6 +42,11 @@ class Algorithm:
             elif move == 'D':
                 i += 1
             pos.append((i, j))
+
+            if move != 'S':
+                step = pygame.image.load(self.path_img + 'step' + move +'.png')
+                step = pygame.transform.scale(step, self.size)
+                self.update_pygame(step, (i, j), self.size)
         # Sau này sẽ in ra file txt
         # for i, row in enumerate(self.maze):
         #     for j, col in enumerate(row):
@@ -38,6 +56,11 @@ class Algorithm:
         #             print(col, end = '')
         #     print()
         return pos
+
+    def update_pygame(self, img, pos, size):
+        self.screen.blit(img, (pos[1] * size[0], pos[0] * size[1]))
+        pygame.display.update()
+        fpsClock.tick(FPS)
 
     def dfs(self):
         # Tập mở chứa các vị trí và đường đi (dùng stack)
@@ -49,13 +72,19 @@ class Algorithm:
         # Các vị trí mà đã duyệt qua (lưu vết)
         visted = [[False] * self.col for _ in range(self.row)]
 
+        flags = []
         while stack:
             # Xét vị trí tiếp theo
             curr = stack.pop()
+            if (len(stack) != 0):
+                flags.append((curr[0], curr[1]))
             # Khi đi qua thì duyệt True (đóng lại)
             visted[curr[0]][curr[1]] = True
             # Nếu gặp đích đến thì dừng
             if self.maze[curr[0]][curr[1]] == 'G':
+                flags = Counter(flags)
+                for flag in flags.keys():
+                    self.update_pygame(self.flag_img, flag, self.size)
                 # Khi gặp đích thì sẽ lưu vết dạng string (vd: SLLRLDULLLG) ~ S = start, G = goal
                 pos = self.move2pos(curr[2])
                 # Chuyển từ string về mảng chứa các vị trí
@@ -91,14 +120,20 @@ class Algorithm:
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Các vị trí mà đã duyệt qua (lưu vết)
         visted = [[False] * self.col for _ in range(self.row)]
-
+        flags = []
         while len(queue) != 0:
             # Đưa vào tập đóng
             close = queue.pop()
+            if (len(queue) != 0):
+                flags.append((close[0], close[1]))
+
             # Khi đi qua thì duyệt True (đóng lại)
             visted[close[0]][close[1]] = True
             # Nếu gặp đích đến thì dừng
             if self.maze[close[0]][close[1]] == 'G':
+                flags = Counter(flags)
+                for flag in flags.keys():
+                    self.update_pygame(self.flag_img, flag, self.size)
                 # Khi gặp đích thì sẽ lưu vết dạng string (vd: SLLRLDULLLG) ~ S = start, G = goal
                 pos = self.move2pos(close[2])
                 # Chuyển từ string về mảng chứa các vị trí
@@ -124,7 +159,7 @@ class Algorithm:
                 elif way == [-1, 0]:
                     go = 'U'
                 # Thêm đường đi vào tập mở, và chờ duyệt
-                queue.appendleft((nr, nc, close[2] + go))  
+                queue.appendleft((nr, nc, close[2] + go)) 
 
     def ucs(self):
         # Tập mở open dựa vào hàng đợi ưu tiên
@@ -132,23 +167,29 @@ class Algorithm:
         open = PriorityQueue()
         # Tạo vị trí bắt đầu
         # h(n) từ start->goal
-        open.put(0, (start[0], start[1], 0, 'S'))
+        open.put(0, (self.start[0], self.start[1], 0, 'S'))
 
         # way chỉ các bước Right - Lelf - Down - Up
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Biến lưu vết các vị trí đã đi (close)
         visted = [[False] * self.col for _ in range(self.row)]
+        sub_cost = 0
+        flags = []
         while open.isEmpty() == False:
             # Lấy từ tập open -> tập close với node có chi phí tới goal bé nhất
             close = open.pop()
+            if (open.isEmpty() == False):
+                flags.append((close[1][0], close[1][1]))
             # close (lưu vết lại)
             visted[close[1][0]][close[1][1]] = True
             # Tương tự như bfs
             if self.maze[close[1][0]][close[1][1]] == 'G':
+                flags = Counter(flags)
+                for flag in flags.keys():
+                    self.update_pygame(self.flag_img, flag, self.size)
                 pos = self.move2pos(close[1][3])
                 return pos
 
-            sub_cost = 0
             for way in ways:
                 # Tương tự: nr và nc là vị trí neightbor 
                 nr, nc = close[1][0] + way[0], close[1][1] + way[1]
@@ -168,7 +209,7 @@ class Algorithm:
                 elif way == [-1, 0]:
                     go = 'U'
                 sub_cost += 1
-                cost = float(close[1][2] + 1 + float(sub_cost / 10000))
+                cost = float(close[1][2] + 1 + float(sub_cost / 10000000))
                 # Đưa vào tập mở và chờ duyệt, với độ ưu tiên sẽ là f_core
                 open.put(cost, (nr, nc, cost, close[1][3] + go))
 
@@ -183,19 +224,25 @@ class Algorithm:
         # Tạo vị trí bắt đầu
         # h(n) từ start->goal
         curr_f = self.heuristic(self.start)
-        open.put(curr_f, (start[0], start[1], 'S'))
+        open.put(curr_f, (self.start[0], self.start[1], 'S'))
 
         # way chỉ các bước Right - Lelf - Down - Up
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Biến lưu vết các vị trí đã đi (close)
         visted = [[False] * self.col for _ in range(self.row)]
+        flags = []
         while open.isEmpty() == False:
             # Lấy từ tập open -> tập close với node có chi phí tới goal bé nhất
             close = open.pop()
+            if open.isEmpty() == False:
+                flags.append((close[1][0], close[1][1]))
             # close (lưu vết lại)
             visted[close[1][0]][close[1][1]] = True
             # Tương tự như bfs
             if self.maze[close[1][0]][close[1][1]] == 'G':
+                flags = Counter(flags)
+                for flag in flags.keys():
+                    self.update_pygame(self.flag_img, flag, self.size)
                 pos = self.move2pos(close[1][2])
                 return pos
 
@@ -227,19 +274,25 @@ class Algorithm:
         open = PriorityQueue()
         # Tạo vị trí bắt đầu 
         curr_f = self.heuristic(self.start)
-        open.put(curr_f, (start[0], start[1], 0, 'S'))
+        open.put(curr_f, (self.start[0], self.start[1], 0, 'S'))
 
         # way chỉ các bước Right - Lelf - Down - Up
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Biến lưu vết các vị trí đã đi (close)
         visted = [[False] * self.col for _ in range(self.row)]
+        flags = []
         while open.isEmpty() == False:
             # Lấy từ tập open -> tập close
             close = open.pop()
+            if open.isEmpty() == False:
+                flags.append((close[1][0], close[1][1]))
             # close (lưu vết lại)
             visted[close[1][0]][close[1][1]] = True
             # Tương tự như bfs
             if self.maze[close[1][0]][close[1][1]] == 'G':
+                flags = Counter(flags)
+                for flag in flags.keys():
+                    self.update_pygame(self.flag_img, flag, self.size)
                 pos = self.move2pos(close[1][3])
                 return pos
 
@@ -267,24 +320,3 @@ class Algorithm:
                     go = 'U'
                 # Đưa vào tập mở và chờ duyệt, với độ ưu tiên là f_core
                 open.put(f_core, (nr, nc, close[1][2] + 1, close[1][3] + go))
-
-# TEST
-fileIn = 'cuaHau/maze.txt'
-fileOut = 'maps/bfs_map.txt'
-maps = MAZE(fileIn, fileOut)
-maze = maps.converse_maze()
-start = maps.start
-goal = maps.goal
-print(start[0], start[1])
-algo = Algorithm(maze, start, goal)
-aStar = algo.A_star()
-gbfs = algo.gbfs()
-bfs = algo.bfs()
-dfs = algo.dfs()
-ucs = algo.ucs()
-print('BFS: ', bfs)
-print('DFS: ',dfs)
-print('UCS: ',ucs)
-print('A*: ',aStar)
-print('GBFS: ',gbfs)
-

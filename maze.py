@@ -8,6 +8,8 @@ class MAZE:
     pos_maze = 0
     # maze ~ map
     maze = []
+    walls = []
+    barriers = []
     # Số lượng điểm thưởng
     number_of_Rewards = 0
     rewards = []
@@ -60,13 +62,18 @@ class MAZE:
     def converse_maze(self):
         maze = self.read_maze()   
         for i in range(self.row):
-            for j in range(self.column):
+            for j in range(self.column):   
                 if maze[i][j] == 'S':
                     self.start = (i, j)
                 if (i == 0 or j == 0 or i == self.row - 1 or j == self.column - 1):
                     if (maze[i][j] == ' '):
                         maze[i] = maze[i].replace(" ", "G", 1)
                         self.goal = (i, j)
+                    if maze[i][j] == 'x':
+                        self.walls.append((i, j))
+                else:
+                    if maze[i][j] == 'x':
+                        self.barriers.append((i, j))
             self.maze.append(maze[i])
 
         return self.maze
