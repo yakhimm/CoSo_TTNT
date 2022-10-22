@@ -1,29 +1,29 @@
-import pygame
+import pygame, sys
 from collections import deque
 from collections import Counter
-from maze import MAZE
 import math
 from priQueue import PriorityQueue
+from capture import Capture
 
 FPS = 10
 fpsClock = pygame.time.Clock()
-
 # class duyệt maza
 class Algorithm:
-    # Các tham số truyền vào là maze, start, goal
-    def __init__(self, maze, start, goal, screen, path):
-        self.maze = maze
-        self.start = start
-        self.goal = goal
+    # Các tham số truyền vào là
+    def __init__(self, maps, screen, path, fileOut):
+        self.maze = maps.maze
+        self.start = maps.start
+        self.goal = maps.goal
+        self.fileOut = fileOut
         # Tính dòng và cột 
-        self.row = len(maze)
-        self.col = len(maze[0])
+        self.row = len(self.maze)
+        self.col = len(self.maze[0])
         # Draw
         self.screen = screen
-        self.path_img = path
-        self.flag_img = pygame.image.load(path + 'flag.png')
-
+        self.path_img = path     
+        self.capture = Capture(self.fileOut)
         self.size = (35, 35)
+        self.flag_img = pygame.image.load(self.path_img + 'flag.png')
         self.flag_img = pygame.transform.scale(self.flag_img, self.size)
 
     # Chuyển đường đi từ str() thành [] chứa các vị trí pos
@@ -31,7 +31,6 @@ class Algorithm:
         i = self.start[0]
         j = self.start[1]
         pos = []
-        
         for move in path:
             if move == 'L':
                 j -= 1
@@ -42,24 +41,23 @@ class Algorithm:
             elif move == 'D':
                 i += 1
             pos.append((i, j))
-
             if move != 'S':
                 step = pygame.image.load(self.path_img + 'step' + move +'.png')
                 step = pygame.transform.scale(step, self.size)
                 self.update_pygame(step, (i, j), self.size)
         # Sau này sẽ in ra file txt
-        # for i, row in enumerate(self.maze):
-        #     for j, col in enumerate(row):
-        #         if (i, j) in pos:
-        #             print('o', end ='')
-        #         else:
-        #             print(col, end = '')
-        #     print()
+        with open(self.fileOut + '.txt', 'w') as f:
+            f.write(str(len(path) - 1))
         return pos
 
     def update_pygame(self, img, pos, size):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
         self.screen.blit(img, (pos[1] * size[0], pos[0] * size[1]))
         pygame.display.update()
+        self.capture.make_png(self.screen)
         fpsClock.tick(FPS)
 
     def dfs(self):
@@ -214,16 +212,19 @@ class Algorithm:
                 open.put(cost, (nr, nc, cost, close[1][3] + go))
 
     # Heuristic tính khoản cách giữa vị trí pos đến đích
-    def heuristic(self, pos):
-        return math.sqrt(pow(pos[0] - self.goal[0], 2) + pow(pos[1] - self.goal[1], 2))
-        # return abs(pos[0] - self.goal[0]) + abs(pos[1] - self.goal[1])
-    def gbfs(self):
+    def heuristic(self, pos, choice = 1):
+        if choice == 1:
+            return float(math.sqrt(pow(pos[0] - self.goal[0], 2) + pow(pos[1] - self.goal[1], 2)))
+        else: 
+            return abs(pos[0] - self.goal[0]) + abs(pos[1] - self.goal[1])
+            
+    def gbfs(self, choice = 1):
         # Tập mở open dựa vào hàng đợi ưu tiên
         # Chứa vị trí i, j và đường đi 
         open = PriorityQueue()
         # Tạo vị trí bắt đầu
         # h(n) từ start->goal
-        curr_f = self.heuristic(self.start)
+        curr_f = self.heuristic(self.start, choice)
         open.put(curr_f, (self.start[0], self.start[1], 'S'))
 
         # way chỉ các bước Right - Lelf - Down - Up
@@ -256,7 +257,7 @@ class Algorithm:
                     or visted[nr][nc]): continue
                 
                 # Tính f_core ~ f(n')
-                f_core = self.heuristic([nr, nc])
+                f_core = self.heuristic([nr, nc], choice)
                 if way == [0, 1]:
                     go = 'R'
                 elif way == [0, -1]: 
@@ -268,12 +269,12 @@ class Algorithm:
                 # Đưa vào tập mở và chờ duyệt, với độ ưu tiên sẽ là f_core
                 open.put(f_core, (nr, nc, close[1][2] + go))
 
-    def A_star(self):
+    def A_star(self, choice = 1):
         # Tập mở open
         # Chứa vị trí i, j và g(n) và đường đi 
         open = PriorityQueue()
         # Tạo vị trí bắt đầu 
-        curr_f = self.heuristic(self.start)
+        curr_f = self.heuristic(self.start, choice)
         open.put(curr_f, (self.start[0], self.start[1], 0, 'S'))
 
         # way chỉ các bước Right - Lelf - Down - Up
@@ -281,6 +282,7 @@ class Algorithm:
         # Biến lưu vết các vị trí đã đi (close)
         visted = [[False] * self.col for _ in range(self.row)]
         flags = []
+        sub_cost = 0
         while open.isEmpty() == False:
             # Lấy từ tập open -> tập close
             close = open.pop()
@@ -306,9 +308,10 @@ class Algorithm:
                     or visted[nr][nc]): continue
                 
                 # Tính f_core ~ f(n'), vì các bước đi tương tự nhau nên sẽ lấy close[2] ~ bước đi của cha + 1 -> g(n')
-                h_core = self.heuristic([nr, nc])
+                h_core = self.heuristic([nr, nc], 1)
                 # f(n') = h(n') + g(n') 
-                f_core = h_core + close[1][2] + 1
+                sub_cost += 1
+                f_core = h_core + close[1][2] + 1.00000001
 
                 if way == [0, 1]:
                     go = 'R'
@@ -319,4 +322,4 @@ class Algorithm:
                 elif way == [-1, 0]:
                     go = 'U'
                 # Đưa vào tập mở và chờ duyệt, với độ ưu tiên là f_core
-                open.put(f_core, (nr, nc, close[1][2] + 1, close[1][3] + go))
+                open.put(f_core, (nr, nc, close[1][2] + 1.00000001, close[1][3] + go))
