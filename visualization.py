@@ -47,7 +47,7 @@ class Draw_MAZE:
             temp.append(((path[1] * size[0], path[0] * size[1]), size))
         return temp
 
-    def run(self, choice):
+    def run(self, choice, heuristic = 1):
         conv_walls = self.convert_path(self.maps.walls, self.size_per_section)
         conv_barriers = self.convert_path(self.maps.barriers, self.size_per_section)
         
@@ -94,9 +94,9 @@ class Draw_MAZE:
         if (choice == 3):
             pos = algo.ucs()
         if (choice == 4):
-            pos = algo.gbfs()
+            pos = algo.gbfs(heuristic)
         if (choice == 5):
-            pos = algo.A_star()  
+            pos = algo.A_star(heuristic)  
         if pos == None:
             with open(self.fileOut +'.txt', 'w') as f:
                 f.write('NO')
