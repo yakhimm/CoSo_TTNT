@@ -158,7 +158,7 @@ class Algorithm:
                     go = 'U'
                 # Thêm đường đi vào tập mở, và chờ duyệt
                 queue.appendleft((nr, nc, close[2] + go)) 
-
+    
     def ucs(self):
         # Tập mở open dựa vào hàng đợi ưu tiên
         # Chứa vị trí i, j và đường đi 
@@ -170,9 +170,8 @@ class Algorithm:
         # way chỉ các bước Right - Lelf - Down - Up
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Biến lưu vết các vị trí đã đi (close)
-        visted = [[False] * self.col for _ in range(self.row)]
-        sub_cost = 0
-        flags = []
+        visted = [[False] * self.col for _ in range(self.row)]  
+        flags = []   
         while open.isEmpty() == False:
             # Lấy từ tập open -> tập close với node có chi phí tới goal bé nhất
             close = open.pop()
@@ -187,7 +186,6 @@ class Algorithm:
                     self.update_pygame(self.flag_img, flag, self.size)
                 pos = self.move2pos(close[1][3])
                 return pos
-
             for way in ways:
                 # Tương tự: nr và nc là vị trí neightbor 
                 nr, nc = close[1][0] + way[0], close[1][1] + way[1]
@@ -195,8 +193,7 @@ class Algorithm:
                 if (nr < 0 or nr >= self.row 
                     or nc < 0 or nc >= self.col 
                     or self.maze[nr][nc] == 'x' 
-                    or visted[nr][nc]): continue
-                
+                    or visted[nr][nc]): continue  
                 # Tính f_core ~ f(n')
                 if way == [0, 1]:
                     go = 'R'
@@ -206,10 +203,13 @@ class Algorithm:
                     go = 'D'
                 elif way == [-1, 0]:
                     go = 'U'
-                sub_cost += 1
-                cost = float(close[1][2] + 1 + float(sub_cost / 10000000))
+                
+                cost = close[1][2] + 1
+                if cost in open.keys():
+                    while cost in open.keys():
+                        cost = (cost + open.upper_keys(cost))/2 + 0.0000001
                 # Đưa vào tập mở và chờ duyệt, với độ ưu tiên sẽ là f_core
-                open.put(cost, (nr, nc, cost, close[1][3] + go))
+                open.put(cost, (nr, nc, close[1][2] + 1, close[1][3] + go))
 
     # Heuristic tính khoản cách giữa vị trí pos đến đích
     def heuristic(self, pos, choice = 1):
@@ -258,6 +258,10 @@ class Algorithm:
                 
                 # Tính f_core ~ f(n')
                 f_core = self.heuristic([nr, nc], choice)
+                
+                if f_core in open.keys():
+                    while f_core in open.keys():
+                        f_core = (f_core + open.upper_keys(f_core))/2 + 0.0000000001
                 if way == [0, 1]:
                     go = 'R'
                 elif way == [0, -1]: 
@@ -282,7 +286,6 @@ class Algorithm:
         # Biến lưu vết các vị trí đã đi (close)
         visted = [[False] * self.col for _ in range(self.row)]
         flags = []
-        sub_cost = 0
         while open.isEmpty() == False:
             # Lấy từ tập open -> tập close
             close = open.pop()
@@ -308,10 +311,9 @@ class Algorithm:
                     or visted[nr][nc]): continue
                 
                 # Tính f_core ~ f(n'), vì các bước đi tương tự nhau nên sẽ lấy close[2] ~ bước đi của cha + 1 -> g(n')
-                h_core = self.heuristic([nr, nc], 1)
+                h_core = self.heuristic([nr, nc])
                 # f(n') = h(n') + g(n') 
-                sub_cost += 1
-                f_core = h_core + close[1][2] + 1.00000001
+                f_core = h_core + close[1][2] + 1 
 
                 if way == [0, 1]:
                     go = 'R'
@@ -321,5 +323,9 @@ class Algorithm:
                     go = 'D'
                 elif way == [-1, 0]:
                     go = 'U'
+
+                if f_core in open.keys():
+                    while f_core in open.keys():
+                        f_core = (f_core + open.upper_keys(f_core))/2 + 0.0000000001
                 # Đưa vào tập mở và chờ duyệt, với độ ưu tiên là f_core
-                open.put(f_core, (nr, nc, close[1][2] + 1.00000001, close[1][3] + go))
+                open.put(f_core, (nr, nc, close[1][2] + 1, close[1][3] + go))

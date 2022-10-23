@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 class PriorityQueue(object):
     def __init__(self):
         self.queue = {}
@@ -24,7 +22,16 @@ class PriorityQueue(object):
         return item
 
     def keys(self):
-        print(self.queue.keys())
+        return self.queue.keys()
     
-    def printQueue(self):
-        print(self.queue)
+    def min_keys(self):
+        return min(self.queue.keys())
+    
+    def max_keys(self):
+        return max(self.queue.keys())
+
+    def upper_keys(self, key):
+        for i in self.queue.keys():
+            if i > key:
+                return i
+        return 0
