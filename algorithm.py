@@ -5,12 +5,18 @@ import math
 from priQueue import PriorityQueue
 from capture import Capture
 
-FPS = 10
+FPS = 25
 fpsClock = pygame.time.Clock()
-# class duyệt maza
+
+# class thuật toán tìm đường đi trong maze
 class Algorithm:
-    # Các tham số truyền vào là
+    # Các tham số truyền vào là 
+    #   maps    : Bản đồ mà đọc được (không có điểm thưởng)
+    #   screen  : Kích thước của màn hình pygame và khung hình hiển thị pygame
+    #   path    : path mang giá trị str() là phần mở rộng của folder dùng chứa hình ảnh
+    #   fileOut : folder ouput/level_1/input....
     def __init__(self, maps, screen, path, fileOut):
+        # Giá trị maze (start, goal)
         self.maze = maps.maze
         self.start = maps.start
         self.goal = maps.goal
@@ -18,7 +24,7 @@ class Algorithm:
         # Tính dòng và cột 
         self.row = len(self.maze)
         self.col = len(self.maze[0])
-        # Draw
+        # Các thông số, giá trị dùng để vẽ trong pygame
         self.screen = screen
         self.path_img = path     
         self.capture = Capture(self.fileOut)
@@ -26,11 +32,13 @@ class Algorithm:
         self.flag_img = pygame.image.load(self.path_img + 'flag.png')
         self.flag_img = pygame.transform.scale(self.flag_img, self.size)
 
-    # Chuyển đường đi từ str() thành [] chứa các vị trí pos
+    # Chuyển đường đi từ str() thành [] chứa các vị trí dẫn đến lối thoát (Exit)
     def move2pos(self, path = ''):
+        # Khởi tạo i, j ở vị trí bắt đầu
         i = self.start[0]
         j = self.start[1]
         pos = []
+        # Xét trong str() path là 1 chuỗi chứa các bước đi đã lưu khi tới G (goal)
         for move in path:
             if move == 'L':
                 j -= 1
@@ -40,16 +48,23 @@ class Algorithm:
                 i -= 1
             elif move == 'D':
                 i += 1
+            # Sau khi xét từng kí tự thì sẽ tăng, giảm i, j phù hợp
+            # Và đưa (i, j) lúc này đã được cập nhật vào pos
             pos.append((i, j))
             if move != 'S':
+                # Có 4 hình ảnh bước chân tượng trưng cho L - R - U - D
                 step = pygame.image.load(self.path_img + 'step' + move +'.png')
                 step = pygame.transform.scale(step, self.size)
                 self.update_pygame(step, (i, j), self.size)
-        # Sau này sẽ in ra file txt
+        # In số lượng bước đi từ vị trí start -> goal ra file output...
         with open(self.fileOut + '.txt', 'w') as f:
             f.write(str(len(path) - 1))
         return pos
 
+    # Hàm update_pygame: Dùng để cập nhật pygame mỗi khi vẽ 1 hình vào
+    #   img : Hình cần vẽ
+    #   pos : Vị trí cần vẽ hình trên screen
+    #   size: Kích thước của hình vẽ lên screen   
     def update_pygame(self, img, pos, size):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -57,23 +72,26 @@ class Algorithm:
                 sys.exit()
         self.screen.blit(img, (pos[1] * size[0], pos[0] * size[1]))
         pygame.display.update()
-        self.capture.make_png(self.screen)
+        self.capture.make_jpg(self.screen)
         fpsClock.tick(FPS)
 
+    # Thuật toán DFS
     def dfs(self):
         # Tập mở chứa các vị trí và đường đi (dùng stack)
         stack = deque()
         stack.append((self.start[0], self.start[1], 'S'))
 
-        # way chỉ các bước Right - Lelf - Down - Up
+        # ways chỉ các bước Right - Lelf - Down - Up
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Các vị trí mà đã duyệt qua (lưu vết)
         visted = [[False] * self.col for _ in range(self.row)]
 
+        # flas là mảng chứa các phần tử sẽ đưa vào tập đóng
         flags = []
         while stack:
-            # Xét vị trí tiếp theo
+            # Xét vị trí hiện tại
             curr = stack.pop()
+            # Xét thì đóng
             if (len(stack) != 0):
                 flags.append((curr[0], curr[1]))
             # Khi đi qua thì duyệt True (đóng lại)
@@ -109,6 +127,7 @@ class Algorithm:
                 # Thêm đường đi vào tập mở, và chờ duyệt
                 stack.append((nr, nc, curr[2] + go))  
 
+    # Thuật toán BFS
     def bfs(self):
         # Tập mở chứa các vị trí và đường đi (dùng queue)
         queue = deque()
@@ -159,15 +178,15 @@ class Algorithm:
                 # Thêm đường đi vào tập mở, và chờ duyệt
                 queue.appendleft((nr, nc, close[2] + go)) 
     
+    # Thuật toán UCS
     def ucs(self):
         # Tập mở open dựa vào hàng đợi ưu tiên
         # Chứa vị trí i, j và đường đi 
         open = PriorityQueue()
         # Tạo vị trí bắt đầu
-        # h(n) từ start->goal
         open.put(0, (self.start[0], self.start[1], 0, 'S'))
 
-        # way chỉ các bước Right - Lelf - Down - Up
+        # ways chỉ các bước Right - Lelf - Down - Up
         ways = [[0, 1], [0, -1], [1, 0], [-1, 0]]
         # Biến lưu vết các vị trí đã đi (close)
         visted = [[False] * self.col for _ in range(self.row)]  
@@ -179,13 +198,14 @@ class Algorithm:
                 flags.append((close[1][0], close[1][1]))
             # close (lưu vết lại)
             visted[close[1][0]][close[1][1]] = True
-            # Tương tự như bfs
+            
             if self.maze[close[1][0]][close[1][1]] == 'G':
                 flags = Counter(flags)
                 for flag in flags.keys():
                     self.update_pygame(self.flag_img, flag, self.size)
                 pos = self.move2pos(close[1][3])
                 return pos
+
             for way in ways:
                 # Tương tự: nr và nc là vị trí neightbor 
                 nr, nc = close[1][0] + way[0], close[1][1] + way[1]
@@ -205,9 +225,14 @@ class Algorithm:
                     go = 'U'
                 
                 cost = close[1][2] + 1
+                #   Về việc thiết lập priority Queue là 1 dictionary
+                #   Nên hiện tượng các key giống nhau sẽ bị ghi đè lên -> mất một vị trí đã lưu vết
+                #   Do đó, em dùng thuật toán giống như hash table, lấy một giá trị đầu tiên lớn hơn cost
+                # trong queue và đem cộng lại chia 2 và cộng cho 1 phụ phí nhỏ, do xét ở trường hợp đầu thì 
+                # (2 + 2) / 2 = 2 thì vẫn sẽ bị hiện tượng trùng lặp, do đó sẽ có thêm 1 phụ phí đề phòng
                 if cost in open.keys():
                     while cost in open.keys():
-                        cost = (cost + open.upper_keys(cost))/2 + 0.0000001
+                        cost = (cost + open.upper_keys(cost))/2 + 0.001
                 # Đưa vào tập mở và chờ duyệt, với độ ưu tiên sẽ là f_core
                 open.put(cost, (nr, nc, close[1][2] + 1, close[1][3] + go))
 
@@ -259,6 +284,7 @@ class Algorithm:
                 # Tính f_core ~ f(n')
                 f_core = self.heuristic([nr, nc], choice)
                 
+                # Tương tự UCS nhưng phụ phí em cho sẽ nhỏ hơn vì heuristic cho số rất nhỏ
                 if f_core in open.keys():
                     while f_core in open.keys():
                         f_core = (f_core + open.upper_keys(f_core))/2 + 0.0000000001
@@ -324,6 +350,7 @@ class Algorithm:
                 elif way == [-1, 0]:
                     go = 'U'
 
+                # Tương tự GBFS
                 if f_core in open.keys():
                     while f_core in open.keys():
                         f_core = (f_core + open.upper_keys(f_core))/2 + 0.0000000001
